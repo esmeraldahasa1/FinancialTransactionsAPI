@@ -11,6 +11,8 @@ namespace Finanacial_Transaction_Management_API.Repositories.Interfaces
 
         Task<Transaction?> GetByIdAsync(int id);
 
+        Task<Transaction?> UpdateAsync(Transaction transaction);
+
         Task DeleteAsync(Transaction transaction);
 
         Task<List<Transaction>> GetAllForSummaryAsync();
