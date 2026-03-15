@@ -1,5 +1,4 @@
 ﻿using Finanacial_Transaction_Management_API.Enums;
-using Financial_Transaction_Management_API.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace Finanacial_Transaction_Management_API.DTO

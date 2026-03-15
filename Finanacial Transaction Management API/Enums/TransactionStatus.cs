@@ -1,4 +1,4 @@
-﻿namespace Financial_Transaction_Management_API.Enums
+﻿namespace Finanacial_Transaction_Management_API.Enums
 {
     public enum TransactionStatus
     {

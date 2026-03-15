@@ -1,4 +1,4 @@
-﻿namespace Financial_Transaction_Management_API.Models
+﻿namespace Finanacial_Transaction_Management_API.Models
 {
     public class Pagination
     {

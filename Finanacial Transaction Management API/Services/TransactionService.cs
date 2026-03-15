@@ -1,47 +1,135 @@
 ﻿using Finanacial_Transaction_Management_API.DTO;
 using Finanacial_Transaction_Management_API.Entities;
 using Finanacial_Transaction_Management_API.Repositories.Interfaces;
-using Financial_Transaction_Management_API.Models;
+using Finanacial_Transaction_Management_API.Enums;
+using Finanacial_Transaction_Management_API.Models;
 
 namespace Finanacial_Transaction_Management_API.Services
 {
     public class TransactionService
     {
         private readonly ITransactionRepository _repository;
+        private readonly ICustomerRepository _customerRepository;
 
-        public TransactionService(ITransactionRepository repository)
+        public TransactionService(
+            ITransactionRepository repository,
+            ICustomerRepository customerRepository)
         {
             _repository = repository;
+            _customerRepository = customerRepository;
         }
 
-        public async Task<Transaction> CreateTransactionAsync(Transaction transaction)
+        // Create new 
+        public async Task<TransactionDto> CreateTransactionAsync(CreateTransactionDto dto)
         {
-            transaction.TransactionDate = DateTime.UtcNow;
+            // Verifiko qe ekzsiton customer
+            var customer = await _customerRepository.GetByIdAsync(dto.CustomerId);
+            if (customer == null)
+                throw new KeyNotFoundException($"Customer with ID {dto.CustomerId} not found");
 
-            return await _repository.CreateAsync(transaction);
+            var transaction = new Transaction
+            {
+                Amount = dto.Amount,
+                TransactionType = dto.TransactionType,
+                Description = dto.Description,
+                Status = dto.Status,
+                CustomerId = dto.CustomerId,
+                TransactionDate = DateTime.UtcNow
+            };
+
+            var created = await _repository.CreateAsync(transaction);
+            return MapToDto(created);
         }
 
-        public async Task<List<Transaction>> GetAllTransactionsAsync(
-            Pagination pagination,
-            TransactionFilter filter)
+        // Get all by pagination and filters
+        public async Task<TransactionListResponse> GetAllTransactionsAsync(Pagination pagination, TransactionFilter filter)
         {
-            return await _repository.GetAllAsync(pagination, filter);
+            var transactions = await _repository.GetAllAsync(pagination, filter);
+
+            return new TransactionListResponse
+            {
+                Pagination = new PaginationDto
+                {
+                    PageNumber = pagination.PageNumber,
+                    PageSize = pagination.PageSize,
+                    TotalCount = pagination.TotalCount,
+                    TotalPages = pagination.TotalPages,
+                    HasPrevious = pagination.HasPrevious,
+                    HasNext = pagination.HasNext
+                },
+                Data = transactions.Select(MapToDto).ToList()
+            };
         }
 
-        public async Task<Transaction?> GetTransactionByIdAsync(int id)
+        // Gets by ID
+        public async Task<TransactionDto?> GetTransactionByIdAsync(int id)
         {
-            return await _repository.GetByIdAsync(id);
+            var transaction = await _repository.GetByIdAsync(id);
+            return transaction != null ? MapToDto(transaction) : null;
         }
 
-        public async Task DeleteTransactionAsync(int id)
+        // Updates 
+        public async Task<TransactionDto?> UpdateTransactionAsync(int id, UpdateTransactionDto dto)
         {
-            await _repository.SoftDeleteAsync(id);
+            var transaction = await _repository.GetByIdAsync(id, true);
+            if (transaction == null) return null;
+
+            transaction.Amount = dto.Amount;
+            transaction.TransactionType = dto.TransactionType;
+            transaction.Description = dto.Description;
+            transaction.Status = dto.Status;
+
+            var updated = await _repository.UpdateAsync(transaction);
+            return MapToDto(updated);
         }
 
-        public async Task<TransactionSummaryDto> GetTransactionsSummaryAsync(
-            TransactionFilter? filter = null)
+        // Deletes a transaction me specifed pattern
+        public async Task<bool> DeleteTransactionAsync(int id, string deleteType)
         {
-            return await _repository.GetSummaryAsync(filter);
+            var transaction = await _repository.GetByIdAsync(id, true);
+            if (transaction == null) return false;
+
+            if (deleteType.ToLower() == "hard")
+                await _repository.HardDeleteAsync(id);
+            else
+                await _repository.SoftDeleteAsync(id);
+
+            return true;
+        }
+
+        // Restore soft deletetd transaction
+        public async Task<bool> RestoreTransactionAsync(int id)
+        {
+            var transaction = await _repository.GetByIdAsync(id, true);
+            if (transaction == null || !transaction.IsDeleted) return false;
+
+            await _repository.RestoreAsync(id);
+            return true;
+        }
+
+        // Get transaction summary with filters
+        public async Task<TransactionSummaryDto> GetTransactionsSummaryAsync(TransactionFilter? filter = null)
+        {
+            return await _repository.GetSummaryAsync(filter ?? new TransactionFilter());
+        }
+
+        // Maps Transaction entity to TransactionDto
+        private TransactionDto MapToDto(Transaction transaction)
+        {
+            return new TransactionDto
+            {
+                TransactionId = transaction.TransactionId,
+                Amount = transaction.Amount,
+                TransactionType = transaction.TransactionType,
+                TransactionDate = transaction.TransactionDate,
+                Description = transaction.Description,
+                Status = transaction.Status,
+                CustomerId = transaction.CustomerId,
+                CustomerFullName = transaction.Customer?.FullName ?? string.Empty,
+                CustomerMainPhone = transaction.Customer?.GetMainPhone() ?? string.Empty,
+                CustomerMainEmail = transaction.Customer?.GetMainEmail() ?? string.Empty,
+                CustomerMainAddress = transaction.Customer?.GetMainAddress() ?? string.Empty
+            };
         }
     }
 }

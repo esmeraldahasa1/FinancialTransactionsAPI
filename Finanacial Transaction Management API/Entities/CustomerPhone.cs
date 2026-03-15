@@ -13,11 +13,10 @@ namespace Finanacial_Transaction_Management_API.Entities
         [MaxLength(20)]
         public string PhoneNumber { get; set; } = string.Empty;
 
-        public bool IsMain { get; set; }
+        public bool IsMain { get; set; } // Flag for main phone number
 
         // Soft delete
         public bool IsDeleted { get; set; } = false;
-
         public Customer Customer { get; set; } = null!;
     }
 }

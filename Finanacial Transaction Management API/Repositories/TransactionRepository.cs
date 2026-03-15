@@ -1,10 +1,10 @@
 ﻿using Finanacial_Transaction_Management_API.Entities;
 using Finanacial_Transaction_Management_API.Repositories.Interfaces;
-using Financial_Transaction_Management_API.Models;
-using FinancialTransactionAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Finanacial_Transaction_Management_API.DTO;
 using Finanacial_Transaction_Management_API.Enums;
+using Finanacial_Transaction_Management_API.Models;
+using Finanacial_Transaction_Management_API.Data;
 
 namespace Finanacial_Transaction_Management_API.Repositories
 {
@@ -17,7 +17,7 @@ namespace Finanacial_Transaction_Management_API.Repositories
             _context = context;
         }
 
-        // Krijojme nje transaksion te ri
+        // Transaksion i ri 
         public async Task<Transaction> CreateAsync(Transaction transaction)
         {
             transaction.TransactionDate = DateTime.UtcNow;
@@ -26,18 +26,18 @@ namespace Finanacial_Transaction_Management_API.Repositories
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
 
-            // Kthe transaksionin me te dhenat e klientit
+            // Kthe trnansaksionin bashke me te dhenat e klientit 
             return await _context.Transactions
                 .Include(t => t.Customer)
-                    .ThenInclude(c => c.Phones)
+                    .ThenInclude(c => c.Phones.Where(p => !p.IsDeleted))
                 .Include(t => t.Customer)
-                    .ThenInclude(c => c.Emails)
+                    .ThenInclude(c => c.Emails.Where(e => !e.IsDeleted))
                 .Include(t => t.Customer)
-                    .ThenInclude(c => c.Addresses)
+                    .ThenInclude(c => c.Addresses.Where(a => !a.IsDeleted))
                 .FirstOrDefaultAsync(t => t.TransactionId == transaction.TransactionId);
         }
 
-        // Merr te gjithe transaksionet me filtera dhe pagination
+        // Get trnasaksionet me filter dhe pagination
         public async Task<List<Transaction>> GetAllAsync(Pagination pagination, TransactionFilter filter)
         {
             var query = BuildTransactionQuery(filter);
@@ -46,7 +46,7 @@ namespace Finanacial_Transaction_Management_API.Repositories
             pagination.TotalCount = await query.CountAsync();
             pagination.TotalPages = (int)Math.Ceiling(pagination.TotalCount / (double)pagination.PageSize);
 
-            // Aplikimi i  pagination
+            // Apply pagination
             return await query
                 .OrderByDescending(t => t.TransactionDate)
                 .Skip(pagination.Skip)
@@ -54,16 +54,16 @@ namespace Finanacial_Transaction_Management_API.Repositories
                 .ToListAsync();
         }
 
-        // Marrim nje transaksion sipas ID
+        // Get by ID
         public async Task<Transaction?> GetByIdAsync(int id, bool includeDeleted = false)
         {
             var query = _context.Transactions
                 .Include(t => t.Customer)
-                    .ThenInclude(c => c.Phones)
+                    .ThenInclude(c => c.Phones.Where(p => !p.IsDeleted))
                 .Include(t => t.Customer)
-                    .ThenInclude(c => c.Emails)
+                    .ThenInclude(c => c.Emails.Where(e => !e.IsDeleted))
                 .Include(t => t.Customer)
-                    .ThenInclude(c => c.Addresses)
+                    .ThenInclude(c => c.Addresses.Where(a => !a.IsDeleted))
                 .AsQueryable();
 
             if (!includeDeleted)
@@ -74,7 +74,7 @@ namespace Finanacial_Transaction_Management_API.Repositories
             return await query.FirstOrDefaultAsync(t => t.TransactionId == id);
         }
 
-        // Perditesojme nje transaksion ekzistues 
+        // Update
         public async Task<Transaction> UpdateAsync(Transaction transaction)
         {
             _context.Transactions.Update(transaction);
@@ -95,7 +95,7 @@ namespace Finanacial_Transaction_Management_API.Repositories
             }
         }
 
-        // Hard delete
+        // Hard delete 
         public async Task HardDeleteAsync(int id)
         {
             var transaction = await _context.Transactions.FindAsync(id);
@@ -106,7 +106,7 @@ namespace Finanacial_Transaction_Management_API.Repositories
             }
         }
 
-        // Rikthen nje trnsaksion te fshire me soft delete
+        // Rikthen nje soft-deleted transaction
         public async Task RestoreAsync(int id)
         {
             var transaction = await _context.Transactions
@@ -121,7 +121,7 @@ namespace Finanacial_Transaction_Management_API.Repositories
             }
         }
 
-        // Merr nje permbledhje te transaksioneve me filter
+        // Gets transaction summary with filters
         public async Task<TransactionSummaryDto> GetSummaryAsync(TransactionFilter? filter = null)
         {
             var query = BuildTransactionQuery(filter ?? new TransactionFilter());
@@ -141,18 +141,11 @@ namespace Finanacial_Transaction_Management_API.Repositories
                 TotalTransactions = transactions.Count,
                 TotalCredits = credits,
                 TotalDebits = debits,
-                NetBalance = credits - debits,
-                AppliedFilter = filter != null ? new TransactionSummaryFilter
-                {
-                    CustomerFullName = filter.CustomerFullName,
-                    CustomerEmail = filter.CustomerMainEmail,
-                    CustomerPhone = filter.CustomerMainPhone,
-                    CustomerAddress = filter.CustomerMainAddress
-                } : null
+                NetBalance = credits - debits
             };
         }
 
-        // Query builder me filetera 
+        // Helper method for  query with filters
         private IQueryable<Transaction> BuildTransactionQuery(TransactionFilter filter)
         {
             var query = _context.Transactions
@@ -164,13 +157,14 @@ namespace Finanacial_Transaction_Management_API.Repositories
                     .ThenInclude(c => c.Addresses.Where(a => !a.IsDeleted))
                 .AsQueryable();
 
-            // Filtro soft delete 
+            // Filter soft delete 
             if (!filter.IncludeDeleted)
             {
                 query = query.Where(t => !t.IsDeleted);
             }
 
-            // Filtera bazuar ne customer 
+            // Filters based on customer data
+
             if (!string.IsNullOrEmpty(filter.CustomerFullName))
             {
                 query = query.Where(t => t.Customer.FullName.Contains(filter.CustomerFullName));
@@ -191,7 +185,8 @@ namespace Finanacial_Transaction_Management_API.Repositories
                 query = query.Where(t => t.Customer.Addresses.Any(a => a.IsMain && a.Address.Contains(filter.CustomerMainAddress)));
             }
 
-            // Filtera shtese 
+
+
             if (filter.TransactionType.HasValue)
             {
                 query = query.Where(t => t.TransactionType == filter.TransactionType.Value);

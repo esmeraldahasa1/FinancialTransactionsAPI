@@ -13,7 +13,7 @@ namespace Finanacial_Transaction_Management_API.Entities
         [MaxLength(100)]
         public string Email { get; set; } = string.Empty;
 
-        public bool IsMain { get; set; }
+        public bool IsMain { get; set; } // Flag for main email address
 
         // Soft delete
         public bool IsDeleted { get; set; } = false;

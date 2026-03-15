@@ -1,5 +1,4 @@
 ﻿using Finanacial_Transaction_Management_API.Enums;
-using Financial_Transaction_Management_API.Enums;
 
 namespace Finanacial_Transaction_Management_API.DTO
 {
@@ -11,8 +10,9 @@ namespace Finanacial_Transaction_Management_API.DTO
         public DateTime TransactionDate { get; set; }
         public string Description { get; set; } = string.Empty;
         public TransactionStatus Status { get; set; }
+        public int CustomerId { get; set; }
 
-        // Customer data main fields
+        // Te dhenat kryesore te Customer
         public string CustomerFullName { get; set; } = string.Empty;
         public string CustomerMainPhone { get; set; } = string.Empty;
         public string CustomerMainEmail { get; set; } = string.Empty;

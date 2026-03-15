@@ -1,5 +1,4 @@
 ﻿using Finanacial_Transaction_Management_API.Enums;
-using Financial_Transaction_Management_API.Enums;
 
 namespace Finanacial_Transaction_Management_API.Entities
 {
@@ -17,7 +16,7 @@ namespace Finanacial_Transaction_Management_API.Entities
 
         public TransactionStatus Status { get; set; }
 
-        // Soft delete 
+        // Soft delete properties
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
 

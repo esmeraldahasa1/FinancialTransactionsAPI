@@ -1,8 +1,7 @@
-﻿
-using Finanacial_Transaction_Management_API.Entities;
+﻿using Finanacial_Transaction_Management_API.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace FinancialTransactionAPI.Data
+namespace Finanacial_Transaction_Management_API.Data
 {
     public class AppDbContext : DbContext
     {
@@ -19,42 +18,42 @@ namespace FinancialTransactionAPI.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-           // Celesi primar 
+            // Celesi primar
             modelBuilder.Entity<Transaction>()
                 .HasKey(t => t.TransactionId);
 
             modelBuilder.Entity<Customer>()
                 .HasKey(c => c.Id);
 
-            // Transaksioni : Klienti (Many-to-One)
+           
             modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.Customer)
                 .WithMany(c => c.Transactions)
                 .HasForeignKey(t => t.CustomerId)
-                .OnDelete(DeleteBehavior.Restrict); // Nuk fshihet transaksioni kur fshihet klienti
+                .OnDelete(DeleteBehavior.Restrict); 
 
-            // Klienti : Numrat e telefonit (One-to-Many)
+            // Customer -> Numri telefonit One to many
             modelBuilder.Entity<CustomerPhone>()
                 .HasOne(p => p.Customer)
                 .WithMany(c => c.Phones)
                 .HasForeignKey(p => p.CustomerId)
-                .OnDelete(DeleteBehavior.Cascade); // Fshij numrat kur fshihet klienti
+                .OnDelete(DeleteBehavior.Cascade); // Fshij numrat kur klienti fshihet
 
-            // Klienti dhe emailet (One-to-Many)
+            // Customer -> Emails One to many
             modelBuilder.Entity<CustomerEmail>()
                 .HasOne(e => e.Customer)
                 .WithMany(c => c.Emails)
                 .HasForeignKey(e => e.CustomerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Klienti dhe adresat 
+            // Customer -> Addresses One to Many
             modelBuilder.Entity<CustomerAddress>()
                 .HasOne(a => a.Customer)
                 .WithMany(c => c.Addresses)
                 .HasForeignKey(a => a.CustomerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Indekset per performance
+            // Indekse per performancen
             modelBuilder.Entity<Transaction>()
                 .HasIndex(t => t.TransactionDate);
 
@@ -73,19 +72,19 @@ namespace FinancialTransactionAPI.Data
             modelBuilder.Entity<CustomerAddress>()
                 .HasIndex(a => new { a.CustomerId, a.IsDeleted });
 
-            // Global query filter per soft delete 
+            // Global fiilters per soft delete
             modelBuilder.Entity<Transaction>().HasQueryFilter(t => !t.IsDeleted);
             modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
             modelBuilder.Entity<CustomerPhone>().HasQueryFilter(p => !p.IsDeleted);
             modelBuilder.Entity<CustomerEmail>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<CustomerAddress>().HasQueryFilter(a => !a.IsDeleted);
 
-            // Konfigurim shtese
+           
             modelBuilder.Entity<Transaction>()
                 .Property(t => t.Amount)
-                .HasPrecision(18, 2); // Precision per decimal
+                .HasPrecision(18, 2);
 
-            // Rregullat per te siguruar qe vetem nje kontakt kryesor per klient
+            // Nje kontakt main per Customer
             modelBuilder.Entity<CustomerPhone>()
                 .HasIndex(p => new { p.CustomerId, p.IsMain })
                 .HasFilter("IsMain = 1 AND IsDeleted = 0")
