@@ -14,24 +14,18 @@ namespace Finanacial_Transaction_Management_API.Services
             _repository = repository;
         }
 
-        public async Task<Transaction> CreateTransactionAsync(CreateTransactionDto dto)
+        public async Task<Transaction> CreateTransactionAsync(Transaction transaction)
         {
-            var transaction = new Transaction
-            {
-                Amount = dto.Amount,
-                TransactionType = dto.TransactionType,
-                Description = dto.Description,
-                Status = dto.Status,
-                CustomerId = dto.CustomerId,
-                TransactionDate = DateTime.UtcNow
-            };
+            transaction.TransactionDate = DateTime.UtcNow;
 
             return await _repository.CreateAsync(transaction);
         }
 
-        public async Task<List<Transaction>> GetAllTransactionsAsync(Pagination pagination)
+        public async Task<List<Transaction>> GetAllTransactionsAsync(
+            Pagination pagination,
+            TransactionFilter filter)
         {
-            return await _repository.GetAllAsync(pagination);
+            return await _repository.GetAllAsync(pagination, filter);
         }
 
         public async Task<Transaction?> GetTransactionByIdAsync(int id)
@@ -39,50 +33,15 @@ namespace Finanacial_Transaction_Management_API.Services
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task<Transaction?> UpdateTransactionAsync(int id, Transaction transaction)
-        {
-            var existing = await _repository.GetByIdAsync(id);
-
-            if (existing == null)
-                return null;
-
-            existing.Amount = transaction.Amount;
-            existing.TransactionType = transaction.TransactionType;
-            existing.Description = transaction.Description;
-            existing.Status = transaction.Status;
-            existing.CustomerId = transaction.CustomerId;
-            existing.TransactionDate = transaction.TransactionDate;
-
-            return await _repository.UpdateAsync(existing);
-        }
-
         public async Task DeleteTransactionAsync(int id)
         {
-            var transaction = await _repository.GetByIdAsync(id);
-
-            if (transaction != null)
-                await _repository.DeleteAsync(transaction);
+            await _repository.SoftDeleteAsync(id);
         }
 
-        public async Task<TransactionSummaryDto> GetTransactionsSummaryAsync()
+        public async Task<TransactionSummaryDto> GetTransactionsSummaryAsync(
+            TransactionFilter? filter = null)
         {
-            var transactions = await _repository.GetAllForSummaryAsync();
-
-            var credits = transactions
-                .Where(x => x.TransactionType.ToLower() == "credit")
-                .Sum(x => x.Amount);
-
-            var debits = transactions
-                .Where(x => x.TransactionType.ToLower() == "debit")
-                .Sum(x => x.Amount);
-
-            return new TransactionSummaryDto
-            {
-                TotalTransactions = transactions.Count,
-                TotalCredits = credits,
-                TotalDebits = debits,
-                NetBalance = credits - debits
-            };
+            return await _repository.GetSummaryAsync(filter);
         }
     }
 }

@@ -1,19 +1,27 @@
-﻿namespace Finanacial_Transaction_Management_API.Entities
+﻿using Finanacial_Transaction_Management_API.Enums;
+using Financial_Transaction_Management_API.Enums;
+
+namespace Finanacial_Transaction_Management_API.Entities
 {
-    public class Transaction // Aktori kryesor 1
+    public class Transaction
     {
         public int TransactionId { get; set; }
 
         public decimal Amount { get; set; }
 
-        public string TransactionType { get; set; } = string.Empty;
+        public TransactionType TransactionType { get; set; }
 
         public DateTime TransactionDate { get; set; }
 
         public string Description { get; set; } = string.Empty;
 
-        public string Status { get; set; } = string.Empty;
+        public TransactionStatus Status { get; set; }
 
+        // Soft delete 
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+
+        // Foreign key
         public int CustomerId { get; set; }
 
         public Customer Customer { get; set; } = null!;

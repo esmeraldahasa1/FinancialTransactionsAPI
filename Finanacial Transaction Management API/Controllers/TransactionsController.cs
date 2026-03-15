@@ -1,5 +1,4 @@
-﻿using Finanacial_Transaction_Management_API.DTO;
-using Finanacial_Transaction_Management_API.Entities;
+﻿using Finanacial_Transaction_Management_API.Entities;
 using Finanacial_Transaction_Management_API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Financial_Transaction_Management_API.Models;
@@ -8,6 +7,7 @@ namespace Finanacial_Transaction_Management_API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+
     public class TransactionsController : ControllerBase
     {
         private readonly TransactionService _service;
@@ -18,17 +18,19 @@ namespace Finanacial_Transaction_Management_API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateTransactionDto dto)
+        public async Task<IActionResult> Create([FromBody] Transaction transaction)
         {
-            var created = await _service.CreateTransactionAsync(dto);
-
+            var created = await _service.CreateTransactionAsync(transaction);
             return CreatedAtAction(nameof(GetById), new { id = created.TransactionId }, created);
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] Pagination pagination)
+        public async Task<IActionResult> GetAll(
+    [FromQuery] Pagination pagination,
+    [FromQuery] TransactionFilter filter)
         {
-            var list = await _service.GetAllTransactionsAsync(pagination);
+            var list = await _service.GetAllTransactionsAsync(pagination, filter);
+
             return Ok(list);
         }
 
@@ -41,20 +43,6 @@ namespace Finanacial_Transaction_Management_API.Controllers
                 return NotFound();
 
             return Ok(transaction);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Transaction transaction)
-        {
-            if (id != transaction.TransactionId)
-                return BadRequest();
-
-            var updated = await _service.UpdateTransactionAsync(id, transaction);
-
-            if (updated == null)
-                return NotFound();
-
-            return Ok(updated);
         }
 
         [HttpDelete("{id}")]

@@ -1,12 +1,21 @@
-﻿namespace Finanacial_Transaction_Management_API.DTO
+﻿using Finanacial_Transaction_Management_API.Enums;
+using Financial_Transaction_Management_API.Enums;
+
+namespace Finanacial_Transaction_Management_API.DTO
 {
     public class TransactionDto
     {
-        public int Id { get; set; }
-
+        public int TransactionId { get; set; }
         public decimal Amount { get; set; }
+        public TransactionType TransactionType { get; set; }
+        public DateTime TransactionDate { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public TransactionStatus Status { get; set; }
 
-        public string Type { get; set; }
-        public DateTime Date { get; set; }
+        // Customer data main fields
+        public string CustomerFullName { get; set; } = string.Empty;
+        public string CustomerMainPhone { get; set; } = string.Empty;
+        public string CustomerMainEmail { get; set; } = string.Empty;
+        public string CustomerMainAddress { get; set; } = string.Empty;
     }
 }
