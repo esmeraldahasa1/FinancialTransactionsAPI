@@ -1,8 +1,9 @@
 ﻿using Finanacial_Transaction_Management_API.DTO;
 using Finanacial_Transaction_Management_API.Entities;
-using Finanacial_Transaction_Management_API.Repositories.Interfaces;
 using Finanacial_Transaction_Management_API.Enums;
 using Finanacial_Transaction_Management_API.Models;
+using Finanacial_Transaction_Management_API.Repositories.Interfaces;
+using System.Text;
 
 namespace Finanacial_Transaction_Management_API.Services
 {
@@ -111,6 +112,39 @@ namespace Finanacial_Transaction_Management_API.Services
         public async Task<TransactionSummaryDto> GetTransactionsSummaryAsync(TransactionFilter? filter = null)
         {
             return await _repository.GetSummaryAsync(filter ?? new TransactionFilter());
+        }
+
+        public async Task<byte[]> ExportTransactionsToCsvAsync(TransactionFilter filter)
+        {
+            var pagination = new Pagination { PageNumber = 1, PageSize = 10000 };
+            var transactions = await _repository.GetAllAsync(pagination, filter);
+
+            var sb = new StringBuilder();
+
+            // Header
+            sb.AppendLine("TransactionId,Amount,Type,Date,Status,Description,CustomerName,Phone,Email,Address");
+
+            foreach (var t in transactions)
+            {
+                sb.AppendLine(string.Join(",",
+                    t.TransactionId,
+                    t.Amount,
+                    t.TransactionType,
+                    t.TransactionDate.ToString("yyyy-MM-dd HH:mm"),
+                    t.Status,
+                    $"\"{t.Description}\"",
+                    $"\"{t.Customer?.FullName}\"",
+                    t.Customer?.GetMainPhone(),
+                    t.Customer?.GetMainEmail(),
+                    $"\"{t.Customer?.GetMainAddress()}\""
+                ));
+            }
+
+            // UTF-8 
+            var preamble = Encoding.UTF8.GetPreamble();
+            var content = Encoding.UTF8.GetBytes(sb.ToString());
+
+            return preamble.Concat(content).ToArray();
         }
 
         // Maps Transaction entity to TransactionDto

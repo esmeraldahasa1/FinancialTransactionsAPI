@@ -40,5 +40,12 @@ namespace Finanacial_Transaction_Management_API.Controllers
                 return NotFound(new { error = $"Customer with ID {id} not found" });
             return Ok(customer);
         }
+
+        [HttpGet("export")]
+        public async Task<IActionResult> Export()
+        {
+            var csvBytes = await _service.ExportCustomersToCsvAsync();
+            return File(csvBytes, "text/csv; charset=utf-8", "customers.csv");
+        }
     }
 }

@@ -117,7 +117,13 @@ namespace Finanacial_Transaction_Management_API.Controllers
             return NoContent();
         }
 
-        
+        [HttpGet("export")]
+        public async Task<IActionResult> Export([FromQuery] TransactionFilter filter)
+        {
+            var csvBytes = await _service.ExportTransactionsToCsvAsync(filter ?? new TransactionFilter());
+            return File(csvBytes, "text/csv; charset=utf-8", "transactions.csv");
+        }
+
         [HttpGet("summary")]
         public async Task<IActionResult> Summary([FromQuery] TransactionFilter? filter = null)
         {

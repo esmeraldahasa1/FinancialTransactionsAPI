@@ -20,11 +20,12 @@ namespace Finanacial_Transaction_Management_API.Repositories
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
-            return await _context.Customers
+            Customer? customer1 = await _context.Customers
                 .Include(c => c.Phones)
                 .Include(c => c.Emails)
                 .Include(c => c.Addresses)
                 .FirstOrDefaultAsync(c => c.Id == customer.Id);
+            return customer1;
         }
 
         // Gets all customers 

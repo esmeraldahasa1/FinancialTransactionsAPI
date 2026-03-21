@@ -1,6 +1,7 @@
 ﻿using Finanacial_Transaction_Management_API.DTO;
 using Finanacial_Transaction_Management_API.Entities;
 using Finanacial_Transaction_Management_API.Repositories.Interfaces;
+using System.Text;
 
 namespace Finanacial_Transaction_Management_API.Services
 {
@@ -60,7 +61,29 @@ namespace Finanacial_Transaction_Management_API.Services
             return customer != null ? MapToDto(customer) : null;
         }
 
-           
+        public async Task<byte[]> ExportCustomersToCsvAsync()
+        {
+            var customers = await _repository.GetAllAsync(false);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Id,FullName,Phone,Email,Address");
+
+            foreach (var c in customers)
+            {
+                sb.AppendLine(string.Join(",",
+                    c.Id,
+                    $"\"{c.FullName}\"",
+                    c.GetMainPhone(),
+                    c.GetMainEmail(),
+                    $"\"{c.GetMainAddress()}\""
+                ));
+            }
+
+            var preamble = Encoding.UTF8.GetPreamble();
+            var content = Encoding.UTF8.GetBytes(sb.ToString());
+            return preamble.Concat(content).ToArray();
+        }
+
         private CustomerDto MapToDto(Customer customer)
         {
             return new CustomerDto
